@@ -3,18 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
-    public float moveSpeed = 0.04f;
-
+    public Animator animator;
+    private float multiplier = 1;
     
     void Update() {
         float ver = Input.GetAxis("Vertical");
         float hor = Input.GetAxis("Horizontal");
         float mouseX = Input.GetAxis("Mouse X");
 
-        transform.position += transform.forward * (ver * moveSpeed) + transform.right * (hor * moveSpeed);
-        transform.rotation *= Quaternion.Euler(0, mouseX, 0);
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ) {
+            multiplier = 2;
+        } else {
+            multiplier = 1;
+        }
 
-
+        animator.SetFloat("BackForward", ver * multiplier);
+        animator.SetFloat("LeftRight", hor * multiplier);
+        
 
     }
 
