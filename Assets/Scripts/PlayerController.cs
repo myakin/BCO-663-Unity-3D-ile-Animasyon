@@ -1,10 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using System;
 
 public class PlayerController : MonoBehaviour {
     public Animator animator;
     public float jumpForce = 100;
+    public static Action<float> OnCameraLookUpDown;
+    public Transform weaponPositionDummy;
+    public GameObject[] weapons;
+
     private float multiplier = 1;
     private Vector3 colliderCenter;
     private float colliderHeight;
@@ -20,7 +26,9 @@ public class PlayerController : MonoBehaviour {
         float ver = Input.GetAxis("Vertical");
         float hor = Input.GetAxis("Horizontal");
         float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
         float jump = Input.GetAxis("Jump");
+        float throwGrenade = Input.GetAxis("Fire2");
 
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ) {
             multiplier = 2;
@@ -36,34 +44,63 @@ public class PlayerController : MonoBehaviour {
             GetComponent<CapsuleCollider>().center = new Vector3(centerPos.x , 1.1f, centerPos.z);
             GetComponent<CapsuleCollider>().height = 1.78f;
             // GetComponent<Rigidbody>().useGravity = false;
-            float jumpForceMultiplier = Random.Range(1f, 2f);
+            float jumpForceMultiplier = UnityEngine.Random.Range(1f, 2f);
             GetComponent<Rigidbody>().AddForce(Vector3.up * jumpForce * jumpForceMultiplier, ForceMode.Force);
         }
 
         if (isGroundRaycastOn) {
             DetectGround();
         }
-        
-        // if (animator.GetNextAnimatorStateInfo(0).IsName("Jumping")) {
-        //     // float duration = animator.GetNextAnimatorStateInfo(0).length;
-        //     if (animator.GetNextAnimatorStateInfo(0).normalizedTime > 0.9f) {
-        //         Debug.Log("Catch");
-        //         GetComponent<CapsuleCollider>().center = colliderCenter;
-        //         GetComponent<CapsuleCollider>().height = colliderHeight;
-        //         GetComponent<Rigidbody>().useGravity = true;
-        //         isjumping = false;
-        //     }
-        // }
-
-        // if (animator.GetNextAnimatorStateInfo(0).IsName("jumping up")) {
-        //     if (animator.GetNextAnimatorStateInfo(0).normalizedTime > 0.8f) {
-        //         isGroundRaycastOn = true;
-        //     }
-        // }
 
         animator.SetFloat("BackForward", ver * multiplier);
         animator.SetFloat("LeftRight", hor * multiplier);
+
+        transform.rotation *= Quaternion.Euler(0, mouseX, 0);   
+
+        OnCameraLookUpDown(mouseY);     
+        // public void LookUpDown(float value) {
+        //     lookUpDownOffset += value; 
+        // }
+
+
+        if (Input.GetKeyDown(KeyCode.Alpha1)) {
+            ChangeWeapon(0);
+            SetAnimationLayerForUpperBody(1);
+        } else if (Input.GetKeyDown(KeyCode.Alpha2)) {
+            ChangeWeapon(1);
+            SetAnimationLayerForUpperBody(2);
+        }
+
+        if (throwGrenade>0) {
+            // AnimateFire2(1);
+            AnimateFire2(2);
+        }
+
         
+    }
+
+    private void ChangeWeapon(int weaponIndex) {
+        if (weaponPositionDummy.childCount>0) {
+            weaponPositionDummy.GetChild(0).gameObject.SetActive(false);
+            weaponPositionDummy.GetChild(0).SetParent(null);
+        }
+        weapons[weaponIndex].transform.SetParent(weaponPositionDummy);
+        weapons[weaponIndex].transform.localPosition = Vector3.zero;
+        weapons[weaponIndex].transform.localRotation = Quaternion.identity;
+        weapons[weaponIndex].SetActive(true);
+    }
+
+    private void SetAnimationLayerForUpperBody(int aLayerIndex) {
+        animator.SetLayerWeight(aLayerIndex, 1);
+    }
+
+    private void AnimateFire2(int aLayerIndex) {
+        animator.SetLayerWeight(aLayerIndex, 1);
+        animator.SetTrigger("Fire2");
+    }
+
+    public void ResetLayerWeight(int aLayerIndex) {
+        animator.SetLayerWeight(aLayerIndex, 0);
     }
 
     public void NeutarizeJumping() {
@@ -92,6 +129,8 @@ public class PlayerController : MonoBehaviour {
             
         }
     }
+
+    
     
 
     public void EnableGroundRaycasting() {
