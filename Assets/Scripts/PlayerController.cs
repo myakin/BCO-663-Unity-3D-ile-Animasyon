@@ -14,7 +14,7 @@ public class PlayerController : MonoBehaviour {
     private float multiplier = 1;
     private Vector3 colliderCenter;
     private float colliderHeight;
-    private bool isJumping, isGroundRaycastOn, shouldPerformHardLanding;
+    private bool isJumping, isGroundRaycastOn, shouldPerformHardLanding, isAttacking;
 
     private void Start() {
         colliderCenter = GetComponent<CapsuleCollider>().center;
@@ -28,7 +28,7 @@ public class PlayerController : MonoBehaviour {
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
         float jump = Input.GetAxis("Jump");
-        float throwGrenade = Input.GetAxis("Fire2");
+        float fire2 = Input.GetAxis("Fire2");
 
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) ) {
             multiplier = 2;
@@ -71,9 +71,13 @@ public class PlayerController : MonoBehaviour {
             SetAnimationLayerForUpperBody(2);
         }
 
-        if (throwGrenade>0) {
-            // AnimateFire2(1);
-            AnimateFire2(2);
+        if (fire2>0 && !isAttacking && weaponPositionDummy.childCount>0) {
+            isAttacking = true;
+            if (weaponPositionDummy.GetChild(0).GetComponent<WeaponController>().weaponType==WeaponController.WeaponType.rifle) {
+                AnimateFire2(1);
+            } else if (weaponPositionDummy.GetChild(0).GetComponent<WeaponController>().weaponType==WeaponController.WeaponType.sword) {
+                AnimateFire2(2);
+            }
         }
 
         
@@ -100,7 +104,10 @@ public class PlayerController : MonoBehaviour {
     }
 
     public void ResetLayerWeight(int aLayerIndex) {
-        animator.SetLayerWeight(aLayerIndex, 0);
+        // animator.SetLayerWeight(aLayerIndex, 0);
+    }
+    public void ResetAttack() {
+        isAttacking = false;
     }
 
     public void NeutarizeJumping() {
