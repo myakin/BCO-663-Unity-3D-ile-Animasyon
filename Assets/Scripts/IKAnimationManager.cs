@@ -7,21 +7,64 @@ public class IKAnimationManager : MonoBehaviour {
     [Header("Set on Editor")]
     public Transform headIKDummy;
     public Transform rightFootIKDummy;
+    public Transform rightHandIKDummy, grabPointDummy;
+    public Transform lumbarIKDummy, lumbarNormalRotationDummy;
     public Rig rigScript;
     [Header("Set Runtime, DO NOT ALTER on Editor")]
     public Transform target;
     public Transform rightFootTarget;
+    public Transform rightHandTarget;
     private IEnumerator graduallyLookCoroutine;
-    
+    private bool isGrabbed, isCarrying;
+    private float releaseTimer;
 
     
 
     private void Update() {
         if (target)
-            headIKDummy.transform.position = target.position;
+            headIKDummy.position = target.position;
         if (rightFootTarget) {
-            rightFootIKDummy.transform.position = rightFootTarget.position;
+            rightFootIKDummy.position = rightFootTarget.position;
             rigScript.weight = Mathf.Lerp(rigScript.weight, 1, 10 * Time.deltaTime);
+        }
+        if (rightHandTarget) {
+            if (!isCarrying) {
+                if (!isGrabbed) {
+                    rightHandIKDummy.position = rightHandTarget.position;
+                    rightHandIKDummy.rotation = rightHandTarget.rotation;
+                    lumbarIKDummy.position = rightHandTarget.position;
+                }   
+                // rig2Script.weight = Mathf.Lerp(rigScript.weight, 1, 10 * Time.deltaTime);
+                rigScript.weight = Mathf.Lerp(rigScript.weight, 1, 10 * Time.deltaTime);
+
+                if (rigScript.weight>=0.9f && rightHandTarget.parent.parent!=grabPointDummy) {
+                    rightHandTarget.parent.parent = grabPointDummy;
+                    UIManager.instance.SetForRelease();
+                    isGrabbed = true;
+                }
+
+                if (isGrabbed) {
+                    lumbarIKDummy.position = Vector3.Lerp(lumbarIKDummy.position, lumbarNormalRotationDummy.position,  10 * Time.deltaTime);
+                }
+            } else {
+                lumbarIKDummy.position = Vector3.Lerp(lumbarNormalRotationDummy.position, lumbarIKDummy.position,  releaseTimer);
+                releaseTimer+=Time.deltaTime;
+
+                if (releaseTimer>1) {
+                    if (isGrabbed) {
+                        rightHandTarget.parent.parent = null;
+                        rightHandTarget.parent.gameObject.AddComponent<Rigidbody>();
+                        isGrabbed = false;
+                    }
+
+                    rightHandIKDummy.position = rightHandTarget.position;
+                    rightHandIKDummy.rotation = rightHandTarget.rotation;
+                    lumbarIKDummy.position = rightHandTarget.position;
+
+                    rigScript.weight = Mathf.Lerp(rigScript.weight, 0, 10 * Time.deltaTime);
+                }
+
+            }
         }
         
     }
@@ -71,4 +114,14 @@ public class IKAnimationManager : MonoBehaviour {
     }
 
 
+    public void GrabItem(GameObject targetObject) {
+        isCarrying = false;
+        if (targetObject.transform.parent.GetComponent<Rigidbody>()) {
+            Destroy(targetObject.transform.parent.GetComponent<Rigidbody>());
+        }
+        rightHandTarget = targetObject.transform;
+    }
+    public void ReleaseItem() {
+        isCarrying = true;
+    }
 }
