@@ -12,9 +12,13 @@ public class UIManager : MonoBehaviour {
 
     public Text warningText;
     public KeyCode grabKey = KeyCode.E;
+    public KeyCode selectTargetKey = KeyCode.Tab;
     private bool isListening;
     private GameObject targetPlayer, targetGrabPoint;
     private bool isCarrying;
+    private GameObject currentTarget;
+    private int currentTargetIndex;
+    private List<GameObject> targets = new List<GameObject>();
 
     private void Update() {
         if (isListening) {
@@ -27,6 +31,39 @@ public class UIManager : MonoBehaviour {
                     isCarrying = false;
                 }
             }
+        }
+        if (Input.GetKeyDown(selectTargetKey)) {
+            // search for targets around 100m
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            RaycastHit[] hits = Physics.SphereCastAll(player.transform.position, 100, player.transform.forward, 0.1f, 1<<8, QueryTriggerInteraction.Ignore);
+            
+            // update targets list with new elements
+            targets.Clear();
+            for (int i=0; i<hits.Length; i++) {
+                if (!targets.Contains(hits[i].collider.gameObject)) {
+                    targets.Add(hits[i].collider.gameObject);
+                }
+            }
+
+            // target selection logic
+            if (targets!=null) {
+                if (!currentTarget) {
+                    currentTarget = targets[0];
+                    currentTargetIndex = 0;
+                } else {
+                    if (currentTargetIndex+1 < targets.Count) {
+                        currentTargetIndex++;
+                    } else {
+                        currentTargetIndex=0;
+                    }
+                    currentTarget = targets[currentTargetIndex];
+                }
+            }
+
+            // pin current target
+            player.GetComponent<IKAnimationManager>().StartAiming(currentTarget.transform);
+
+            Debug.Log(currentTarget.name);
         }
     }
 

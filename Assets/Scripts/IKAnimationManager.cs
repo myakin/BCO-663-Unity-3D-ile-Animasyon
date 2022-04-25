@@ -7,7 +7,7 @@ public class IKAnimationManager : MonoBehaviour {
     [Header("Set on Editor")]
     public Transform headIKDummy;
     public Transform rightFootIKDummy;
-    public Transform rightHandIKDummy, grabPointDummy;
+    public Transform rightHandIKDummy, grabPointDummy, aimRightHandIKDummy, aimLumbarRotationIKDummy;
     public Transform lumbarIKDummy, lumbarNormalRotationDummy;
     public Rig rigScript;
     [Header("Set Runtime, DO NOT ALTER on Editor")]
@@ -66,6 +66,12 @@ public class IKAnimationManager : MonoBehaviour {
 
             }
         }
+        if (aimRightHandIKDummy) {
+            aimRightHandIKDummy.position = target.position;
+        }
+        if (aimLumbarRotationIKDummy) {
+            aimLumbarRotationIKDummy.position = target.position;
+        }
         
     }
 
@@ -87,7 +93,13 @@ public class IKAnimationManager : MonoBehaviour {
         }
     }
 
-     
+    public void StartAiming(Transform aTarget) {
+        target = aTarget;
+        if (graduallyLookCoroutine==null) {
+            graduallyLookCoroutine = GraduallyLookCoroutine(1);
+            StartCoroutine(graduallyLookCoroutine);
+        }
+    }
 
     public void StartFootPositioning(Transform aTarget) {
         rightFootTarget = aTarget;
